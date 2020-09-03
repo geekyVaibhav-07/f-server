@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const app = express();
 const globalErrorController = require("./controllers/errorController");
 const userRouter = require("./routes/userRouter");
+const AppError = require("./utils/appError");
 
 //global app middleweres
 app.use(helmet());

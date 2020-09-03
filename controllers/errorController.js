@@ -5,7 +5,7 @@ const devError = (err, res) => {
     status: err.status,
     message: err.message,
     err: err,
-    // stack: err.stack,
+    stack: err.stack,
   });
 };
 
