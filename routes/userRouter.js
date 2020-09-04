@@ -10,20 +10,27 @@ const paramId = (req, res, next) => {
   next();
 };
 
+// users routes => protected by login
 router
   .route("/me")
-  .get(authController.protect, paramId, userController.getUserById);
+  .get(authController.protect, paramId, userController.getUserById)
+  .put(authController.protect, paramId, userController.updateUser);
+
+router.route("/me/:id").get(authController.protect, userController.getUserById);
+
+// unprotected => will be protected by role => will be used by admin
+router
+  .route("/:id")
+  .get(userController.getUserById)
+  .put(userController.updateUser)
+  .delete(userController.deleteUser);
+
+//unprotected routes
 
 router
   .route("/")
   .post(userController.createUser)
   .get(userController.getAllUsers);
-
-router
-  .route("/:id")
-  .get(userController.getUserById)
-  .put(authController.protect, userController.updateUser)
-  .delete(userController.deleteUser);
 
 router
   .route("/login")

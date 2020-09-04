@@ -1,6 +1,6 @@
 const app = require(`./app.js`);
 const dotenv = require("dotenv");
-const db = require("./db");
+const { db } = require("./db");
 
 process.on("unhandledRejection", (err) => {
   console.log(err.name);

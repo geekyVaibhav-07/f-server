@@ -9,7 +9,6 @@ const createUser = asyncCatch(async (req, res, next) => {
   }
   let data = { firstname, lastname, avatar, password, email };
   let response = await userModel.createUserInDB(data);
-  console.log(response);
   res.status(201).json({
     status: "success",
     user: response,

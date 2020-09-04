@@ -64,7 +64,7 @@ const protect = asyncCatch(async (req, res, next) => {
   //     );
   //   }
 
-  req.user = freshUser;
+  req.user = freshUser[0];
   next();
 });
 

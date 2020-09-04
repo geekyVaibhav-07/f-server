@@ -5,6 +5,9 @@ const helmet = require("helmet");
 const app = express();
 const globalErrorController = require("./controllers/errorController");
 const userRouter = require("./routes/userRouter");
+const requestRouter = require("./routes/requestRouter");
+const friendRouter = require("./routes/friendRouter");
+
 const AppError = require("./utils/appError");
 
 //global app middleweres
@@ -15,6 +18,8 @@ if (process.env.NODE_ENV === "development") {
 app.use(express.json());
 
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/request", requestRouter);
+app.use("/api/v1/friend", friendRouter);
 
 app.route("*").all((req, res, next) => {
   next(new AppError("route not defined", 404));

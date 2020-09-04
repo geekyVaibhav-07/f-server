@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const dotenv = require("dotenv");
+const util = require("util");
 
 dotenv.config({ path: `./config.env` });
 
@@ -11,4 +12,7 @@ const connection = mysql.createConnection({
   database: process.env.DATABASE_DB,
 });
 
-module.exports = connection;
+const query = util.promisify(connection.query).bind(connection);
+
+module.exports.query = query;
+module.exports.db = connection;
