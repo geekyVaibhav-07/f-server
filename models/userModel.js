@@ -9,21 +9,13 @@ const createUserInDB = async (data) => {
 };
 
 const getAllUsersFromDB = async ({ offset, limit }) => {
-  let sql = "SELECT * FROM users ";
-  if (offset && limit) {
-    sql = `${sql}LIMIT ${offset},${limit} `;
-  } else if (limit) {
-    sql = `${sql}LIMIT ${limit}`;
-  }
+  let sql = `SELECT id, email, firstname, lastname, avatar FROM users ORDER BY id ASC LIMIT ${offset},${limit} `;
   const result = await query(sql);
-  result.forEach((element) => {
-    element.password = undefined;
-  });
   return result;
 };
 
 const getUser = async (field, value) => {
-  let sql = `SELECT * FROM users WHERE ${field}=${value}`;
+  let sql = `SELECT  id, email, firstname, lastname, avatar  FROM users WHERE ${field}=${value}`;
   const result = await query(sql);
   result.forEach((element) => {
     element.password = undefined;
@@ -50,6 +42,9 @@ const deleteUser = async (id) => {
 const login = async (email, candidatePassword) => {
   const sql = `SELECT * FROM users WHERE email='${email}'`;
   const result = await query(sql);
+  if (result.length < 1) {
+    return false;
+  }
   const status = await bcrypt.compare(candidatePassword, result[0].password);
   if (status) {
     result[0].password = undefined;

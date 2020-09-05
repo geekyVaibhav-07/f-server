@@ -9,4 +9,8 @@ router
   .route("/:id")
   .delete(authController.protect, friendController.removeFromFriend);
 
+router
+  .route("/:id/friends")
+  .get(authController.protect, friendController.getMyFriendsFriends);
+
 module.exports = router;

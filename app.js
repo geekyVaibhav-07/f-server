@@ -1,4 +1,5 @@
 const express = require("express");
+var cors = require("cors");
 const morgan = require("morgan");
 const hpp = require("hpp");
 const helmet = require("helmet");
@@ -16,6 +17,7 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 app.use(express.json());
+app.use(cors());
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/request", requestRouter);

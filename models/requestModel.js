@@ -5,9 +5,6 @@ const friendModel = require("./friendModel");
 
 const createRequest = async (from, to) => {
   const fromUser = await userModel.getUserById(from);
-  if (!fromUser) {
-    return next(new AppError("Sender not found !!!", 400));
-  }
   const toUser = await userModel.getUserById(to);
   if (!toUser) {
     return next(new AppError("recipient not found !!!", 400));
@@ -28,20 +25,14 @@ const deleteRequest = async (from, to) => {
 };
 
 const acceptRequest = async (from, to) => {
-  const result1 = await friendModel.insertFriendData(from, to);
-  const result2 = await friendModel.insertFriendData(to, from);
-  const result3 = await deleteRequest(from, to);
-  return result1;
+  let sql = `INSERT INTO friends (user_id, friend_id) VALUES (${from}, ${to}), (${to}, ${from})`;
+  const result = await query(sql);
+  const result1 = await deleteRequest(from, to);
+  return result;
 };
 
-const getRequests = async (filter) => {
-  let sql = "SELECT * FROM requests WHERE ";
-  let filterArray = [];
-  filter.forEach((element) => {
-    filterArray.push(`${element.key}=${element.value}`);
-  });
-  let filterString = filterArray.join(" AND ");
-  sql += filterString;
+const getRequests = async (filter, pagination) => {
+  let sql = `SELECT users.id as id, users.email as email, users.firstname as firstname, users.lastname as lastname, users.avatar as avatar FROM requests INNER JOIN users on users.id=requests.${filter.commonColumn} AND requests.${filter.key}=${filter.value} ORDER BY requests.request_id ASC LIMIT ${pagination.offset},${pagination.limit} `;
   const result = await query(sql);
   return result;
 };

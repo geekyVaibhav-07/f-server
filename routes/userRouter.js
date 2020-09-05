@@ -19,6 +19,11 @@ router
 router.route("/me/:id").get(authController.protect, userController.getUserById);
 
 // unprotected => will be protected by role => will be used by admin
+
+router
+  .route("/login")
+  .post(userController.login, paramId, authController.authToken);
+
 router
   .route("/:id")
   .get(userController.getUserById)
@@ -31,9 +36,5 @@ router
   .route("/")
   .post(userController.createUser)
   .get(userController.getAllUsers);
-
-router
-  .route("/login")
-  .post(userController.login, paramId, authController.authToken);
 
 module.exports = router;

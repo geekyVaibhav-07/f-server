@@ -18,18 +18,15 @@ const createUser = asyncCatch(async (req, res, next) => {
 const getAllUsers = asyncCatch(async (req, res, next) => {
   const query = req.query;
   const pagination = {};
-  if (query.count) {
-    pagination.limit = Number.parseInt(query.count);
-  }
-  if (query.page) {
-    let page = (Number.parseInt(query.page) - 1) * Number.parseInt(query.count);
-    pagination.offset = isNaN(page) ? undefined : page;
-  }
+  pagination.limit = Number.parseInt(query.count) || 10;
+
+  let page = (Number.parseInt(query.page) - 1) * Number.parseInt(query.count);
+  pagination.offset = isNaN(page) ? 0 : page;
 
   let response = await userModel.getAllUsersFromDB(pagination);
   res.status(200).json({
     status: "success",
-    user: response,
+    users: response,
   });
 });
 
@@ -40,7 +37,7 @@ const getUserById = asyncCatch(async (req, res, next) => {
   }
   res.status(200).json({
     status: "success",
-    user: response,
+    user: response[0],
   });
 });
 

@@ -45,9 +45,17 @@ const acceptRequest = asyncCatch(async (req, res, next) => {
 });
 
 const getAllRequests = asyncCatch(async (req, res, next) => {
+  const query = req.query;
+  const pagination = {};
+  pagination.limit = Number.parseInt(query.count) || 10;
+
+  let page = (Number.parseInt(query.page) - 1) * Number.parseInt(query.count);
+  pagination.offset = isNaN(page) ? 0 : page;
+
   let to = parseInt(req.user.id);
-  let filter = [{ key: "to_user", value: to }];
-  const result = await requestModel.getRequests(filter);
+  let filter = { key: "to_user", value: to, commonColumn: "from_user" };
+
+  const result = await requestModel.getRequests(filter, pagination);
   res.status(201).json({
     status: "success",
     result,
