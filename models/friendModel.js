@@ -1,11 +1,11 @@
-const { query } = require("../db");
-const userModel = require("./userModel");
+const { query } = require('../db');
+const userModel = require('./userModel');
 const insertFriendData = async (user_id, friend_id) => {
   const data = {
     user_id,
     friend_id,
   };
-  let sql = `INSERT INTO friends SET ?`;
+  let sql = 'INSERT INTO friends SET ?';
   const result = await query(sql, data);
   return result;
 };

@@ -1,4 +1,4 @@
-const AppError = require("./../utils/appError");
+const AppError = require('./../utils/appError');
 
 const devError = (err, res) => {
   res.status(err.statusCode).json({
@@ -17,19 +17,19 @@ const prodError = (err, res) => {
     });
   } else {
     res.status(500).json({
-      status: "error",
-      message: "Something went wrong !!!",
+      status: 'error',
+      message: 'Something went wrong !!!',
     });
   }
 };
 
 const globalErrorController = (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
-  err.status = err.status || "fail";
+  err.status = err.status || 'fail';
 
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === 'development') {
     devError(err, res);
-  } else if (process.env.NODE_ENV === "production") {
+  } else if (process.env.NODE_ENV === 'production') {
     prodError(err, res);
   }
 };

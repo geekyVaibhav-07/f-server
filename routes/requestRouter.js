@@ -1,6 +1,6 @@
-const express = require("express");
-const requestController = require("./../controllers/requestController");
-const authController = require("./../controllers/authController");
+const express = require('express');
+const requestController = require('./../controllers/requestController');
+const authController = require('./../controllers/authController');
 
 const router = express.Router();
 
@@ -10,10 +10,10 @@ const paramId = (req, res, next, key) => {
   next();
 };
 
-router.route("/").get(authController.protect, requestController.getAllRequests);
+router.route('/').get(authController.protect, requestController.getAllRequests);
 
 router
-  .route("/:id")
+  .route('/:id')
   .post(authController.protect, requestController.sendRequest)
   .delete(authController.protect, requestController.deleteRequest)
   .put(authController.protect, requestController.acceptRequest);

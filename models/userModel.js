@@ -1,9 +1,9 @@
-const { query } = require("./../db");
-const bcrypt = require("bcrypt");
+const { query } = require('./../db');
+const bcrypt = require('bcrypt');
 
 const createUserInDB = async (data) => {
   data.password = await bcrypt.hash(data.password, 12);
-  let sql = "INSERT INTO users SET ?";
+  let sql = 'INSERT INTO users SET ?';
   const result = await query(sql, data);
   return result;
 };
@@ -24,7 +24,7 @@ const getUser = async (field, value) => {
 };
 
 const getUserById = async (id) => {
-  return await getUser("id", id);
+  return await getUser('id', id);
 };
 
 const editUserInDB = async (id, data) => {

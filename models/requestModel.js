@@ -1,19 +1,19 @@
-const { query } = require("./../db");
-const userModel = require("./userModel");
-const AppError = require("./../utils/appError");
-const friendModel = require("./friendModel");
+const { query } = require('./../db');
+const userModel = require('./userModel');
+const AppError = require('./../utils/appError');
+const friendModel = require('./friendModel');
 
 const createRequest = async (from, to) => {
   const fromUser = await userModel.getUserById(from);
   const toUser = await userModel.getUserById(to);
   if (!toUser) {
-    return next(new AppError("recipient not found !!!", 400));
+    return next(new AppError('recipient not found !!!', 400));
   }
   const data = {
     from_user: from,
     to_user: to,
   };
-  let sql = `INSERT INTO requests SET ?`;
+  let sql = 'INSERT INTO requests SET ?';
   const result = await query(sql, data);
   return result;
 };

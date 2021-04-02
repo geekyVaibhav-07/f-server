@@ -1,8 +1,8 @@
-const app = require(`./app.js`);
-const dotenv = require("dotenv");
-const { db } = require("./db");
+const app = require('./app.js');
+const dotenv = require('dotenv');
+const { db } = require('./db');
 
-process.on("unhandledRejection", (err) => {
+process.on('unhandledRejection', (err) => {
   console.log(err.name);
   console.log(err.message);
   server &&
@@ -11,7 +11,7 @@ process.on("unhandledRejection", (err) => {
     });
 });
 
-process.on("uncaughtException", (err) => {
+process.on('uncaughtException', (err) => {
   console.log(err.name);
   console.log(err.message);
   server &&
@@ -32,7 +32,7 @@ let server;
 db.connect(function (error) {
   if (error) {
     console.log(error);
-    console.log("unable to connect to  database !!!");
+    console.log('unable to connect to  database !!!');
   } else {
     server = startServer();
   }

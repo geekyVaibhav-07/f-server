@@ -1,28 +1,26 @@
-const jwt = require("jsonwebtoken");
-const userModel = require("./../models/userModel");
-const asyncCatch = require("./../utils/asyncCatch");
-const AppError = require("./../utils/appError");
-const { promisify } = require("util");
+const jwt = require('jsonwebtoken');
+const { promisify } = require('util');
+const userModel = require('../models/userModel');
+const asyncCatch = require('../utils/asyncCatch');
+const AppError = require('../utils/appError');
 
-const signToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
-};
+const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, {
+  expiresIn: process.env.JWT_EXPIRES_IN,
+});
 
-const createSendToken = (req, res, next) => {
-  jwtCookieOptions = {
+const createSendToken = (req, res) => {
+  const jwtCookieOptions = {
     expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
     ),
     httpOnly: true,
   };
-  if (process.env.NODE_ENV === "production") jwtCookieOptions.secure = true;
-  const id = req.user.id;
+  if (process.env.NODE_ENV === 'production') jwtCookieOptions.secure = true;
+  const { id } = req.user;
   const token = signToken(id);
-  res.cookie("jwt", token, jwtCookieOptions);
+  res.cookie('jwt', token, jwtCookieOptions);
   res.status(200).json({
-    status: "success",
+    status: 'success',
     token,
   });
 };
@@ -30,19 +28,19 @@ const createSendToken = (req, res, next) => {
 const protect = asyncCatch(async (req, res, next) => {
   let token;
   if (
-    req.headers &&
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
+    req.headers
+    && req.headers.authorization
+    && req.headers.authorization.startsWith('Bearer')
   ) {
-    token = req.headers.authorization.split(" ")[1];
+    token = req.headers.authorization.split(' ')[1];
   }
 
   if (!token) {
     return next(
       new AppError(
-        "You are not logged in, please log in to get access !!!",
-        401
-      )
+        'You are not logged in, please log in to get access !!!',
+        401,
+      ),
     );
   }
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
@@ -50,10 +48,10 @@ const protect = asyncCatch(async (req, res, next) => {
   const freshUser = await userModel.getUserById(decoded.id);
 
   if (!freshUser) {
-    return next(new AppError("User no longer exists !!!", 401));
+    return next(new AppError('User no longer exists !!!', 401));
   }
 
-  //to be implemented
+  // to be implemented
 
   //   if (freshUser.changedPasswordAfter(decoded.iat)) {
   //     return next(
