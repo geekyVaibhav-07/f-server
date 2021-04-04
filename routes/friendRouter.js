@@ -6,11 +6,11 @@ const router = express.Router();
 
 router.route('/').get(authController.protect, friendController.getAllMyFriends);
 router
-  .route('/:id')
-  .delete(authController.protect, friendController.removeFromFriend);
+    .route('/:id')
+    .delete(authController.protect, friendController.removeFromFriend);
 
 router
-  .route('/:id/friends')
-  .get(authController.protect, friendController.getMyFriendsFriends);
+    .route('/:id/friends')
+    .get(authController.protect, friendController.getMyFriendsFriends);
 
 module.exports = router;

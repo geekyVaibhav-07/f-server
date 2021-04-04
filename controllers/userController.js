@@ -1,93 +1,220 @@
 const userModel = require('./../models/userModel');
+const otpModel = require('./../models/otpModel');
 const asyncCatch = require('./../utils/asyncCatch');
 const AppError = require('./../utils/appError');
+const uniqid = require('uniqid');
+const { validateEmail } = require('./../utils/validators');
+const { OtpHandler } = require('./../utils/otpHandler');
+const { errorConstants, userConstants, successConstants } = require('../constants/constants');
+const bcrypt = require('bcrypt');
+const { removeUndefindes } = require('./../utils/helper');
 
-const createUser = asyncCatch(async (req, res, next) => {
-  let { firstname, lastname, avatar, password, email } = req.body;
-  if (!firstname || !lastname || !password || !email) {
-    return next(new AppError('Please provide sufficient infromation !!!', 400));
-  }
-  let data = { firstname, lastname, avatar, password, email };
-  let response = await userModel.createUserInDB(data);
-  res.status(201).json({
-    status: 'success',
-    user: response,
-  });
+const userExist = async (email) => {
+    try {
+        if (!email) {
+            return {}
+        }
+        const ifExistInEmailVerificationOtp = await otpModel.ifExistInEmailVerificationOtp({ email });
+        if (ifExistInEmailVerificationOtp[0]) {
+            return {
+                otp_sent_at: ifExistInEmailVerificationOtp[0].otp_sent_at
+            }
+        }
+        const ifExistInUser = await userModel.ifExistInUser({ email });
+        if (ifExistInUser[0]) {
+            return {
+                active: true
+            }
+        }
+        return {};
+    }
+    catch {
+        return {};
+    }
+};
+
+const createUser = asyncCatch(async (req = {}, res = {}, next) => {
+    const { body: { email, password, otp } = {} }  =req;
+    if (!email || !password || !otp) {
+        const message = {
+            type: errorConstants.INSUFFICIENT_DATA
+        };
+        return next(new AppError( message, 400))
+    }
+    if ( !validateEmail(email) ) {
+        const message = {
+            type: errorConstants.EMAIL_INVALID
+        }
+        return next(new AppError(message, 400));
+    }
+    const ifUserExist  = await userModel.ifExistInUser({ email });
+    if(ifUserExist.length > 0) {
+        const message = {
+            type: userConstants.ALREADY_REGISTERED
+        }
+        return next(new AppError(message, 400));
+    } 
+    const result = await otpModel.getEmailVerificationOTP(email);
+    if (!Array.isArray(result) || !result.length > 0) {
+        const message = {
+            type: errorConstants.OTP_NOT_SENT
+        }
+        return next(new AppError(message, 400));
+    }
+    const { otp: sent_otp, otp_sent_at } = result[0];
+    const timeNow = Date.now();
+    if ((timeNow - new Date(otp_sent_at).getTime())/1000 > 300) {
+        const message = {
+            type: errorConstants.OTP_EXPIRED
+        }
+        return next(new AppError(message, 400));
+    }
+    const verified =  await bcrypt.compare(otp, sent_otp);
+    if (!verified) {
+        const message = {
+            type: errorConstants.OTP_NOT_MATCH
+        }
+        return next(new AppError(message, 400));
+    }
+    const id = uniqid('123-');
+    
+    const encrypted_password = await bcrypt.hash(password, 12);
+    const response = await userModel.createUserInDB({ id, email, password: encrypted_password });
+    if (response) {
+        const deleteFfromEmailVerificationOtp = await otpModel.deleteEmailOtp({ email })
+    }
+    res.status(201).json({
+        status: '1',
+        message: {
+            type: successConstants.REGISTERED
+        }
+    });
+})
+
+const sendEmailVerificationOTP = asyncCatch(async (req = {}, res = {}, next) => {
+    const { body: { email } = {} }  =req;
+    if (!email) {
+        const message = {
+            type: errorConstants.INSUFFICIENT_DATA
+        }
+        return next(AppError(message, 400))
+    }
+    if ( !validateEmail(email) ) {
+        const message = {
+            type: errorConstants.EMAIL_INVALID
+        }
+        return next(new AppError(message, 400));
+    }
+    const ifUserExist = await userExist(email);
+    const { otp_sent_at, active } = ifUserExist;
+    if (active) {
+        const message = {
+            type: userConstants.ALREADY_REGISTERED
+        }
+        return next(new AppError(message, 400));
+    }
+    const timeNow = Date.now();
+    if ((timeNow - new Date(otp_sent_at).getTime())/1000 < 300) {
+        const message = {
+            type: successConstants.OTP_ALREADY_SENT
+        }
+        return next(new AppError(message, 400));
+    }
+    const otp = await bcrypt.hash( OtpHandler.createOTP(), 12);
+    const result = await otpModel.registerOTP({ email, otp });
+    const otpSent = await OtpHandler.sendOtp();
+    res.status(201).json({
+        status: successConstants.OTP_SENT,
+        message: {
+            type: successConstants.OTP_SENT,
+        }
+    });
+});
+
+const login = asyncCatch(async (req = {}, res, next) => {
+    const { body: { email, password } = {} } = req;
+    if (!email || !password) {
+        const message = {
+            type: errorConstants.INSUFFICIENT_DATA
+        }
+        return next(new AppError(message, 400));
+    }
+    const response = await userModel.login({ email, candidatePassword: password });
+    if (!response) {
+        const message = {
+            type: errorConstants.EMAIL_PASSWORD_WRONG
+        }
+        return next(new AppError(message, 400));
+    }
+    req.user = response;
+    next();
+});
+
+const updatedUserDetails = asyncCatch(async (req = {}, res, next) => {
+    const { body: { first_name, last_name, middle_name, phone_number, country_code, address_1, address_2, city, zip, country, dob, geneder } = {}, user: { id } = {} } = req;
+    if (!id) {
+        const message = {
+            type: errorConstants.INSUFFICIENT_DATA
+        }
+        return next(new AppError(message, 400));
+    }
+    const updateData = removeUndefindes({ id, first_name, last_name, middle_name, phone_number, country_code, address_1, address_2, city, zip, country, dob, geneder });
+    const response  = await userModel.updateUserDetails(updateData);
+    res.status(201).json({
+        status: 1,
+        message: {
+            type: userConstants.DETAILS_UPDATED,
+        }
+    });
+
 });
 
 const getAllUsers = asyncCatch(async (req, res, next) => {
-  const query = req.query;
-  const pagination = {};
-  pagination.limit = Number.parseInt(query.count) || 10;
+    const query = req.query;
+    const pagination = {};
+    pagination.limit = Number.parseInt(query.count) || 10;
 
-  let page = (Number.parseInt(query.page) - 1) * Number.parseInt(query.count);
-  pagination.offset = isNaN(page) ? 0 : page;
+    const page = (Number.parseInt(query.page) - 1) * Number.parseInt(query.count);
+    pagination.offset = isNaN(page) ? 0 : page;
 
-  let response = await userModel.getAllUsersFromDB(pagination);
-  res.status(200).json({
-    status: 'success',
-    users: response,
-  });
+    const response = await userModel.getAllUsersFromDB(pagination);
+    res.status(200).json({
+        status: 'success',
+        users: response,
+    });
 });
 
 const getUserById = asyncCatch(async (req, res, next) => {
-  let response = await userModel.getUserById(req.params.id);
-  if (response.length === 0) {
-    return next(new AppError('No User Found', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    user: response[0],
-  });
+    const response = await userModel.getUserById(req.params.id);
+    if (response.length === 0) {
+        return next(new AppError('No User Found', 404));
+    }
+    res.status(200).json({
+        status: 'success',
+        user: response[0],
+    });
 });
 
-const updateUser = asyncCatch(async (req, res, next) => {
-  const id = req.params.id;
-  const { firstname, lastname, avatar } = req.body;
-  const data = {};
-  if (firstname) data.firstname = firstname;
-  if (lastname) data.lastname = lastname;
-  if (avatar) data.avatar = avatar;
-  if (!data.firstname && !data.lastname && !data.avatar) {
-    return next(new AppError('No data to update !!!', 400));
-  }
-  let response = await userModel.editUserInDB(id, data);
-  if (response.affectedRows === 0) {
-    return next(new AppError('No User Found', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    user: response,
-  });
-});
 
 const deleteUser = asyncCatch(async (req, res, next) => {
-  let response = await userModel.deleteUser(req.params.id);
-  if (response.affectedRows === 0) {
-    return next(new AppError('No User Found', 404));
-  }
-  res.status(200).json({
-    status: 'success',
-    user: response,
-  });
+    const response = await userModel.deleteUser(req.params.id);
+    if (response.affectedRows === 0) {
+        return next(new AppError('No User Found', 404));
+    }
+    res.status(200).json({
+        status: 'success',
+        user: response,
+    });
 });
 
-const login = asyncCatch(async (req, res, next) => {
-  if (!req.body.email || !req.body.password) {
-    return next(new AppError('Please provide email address !!!', 400));
-  }
-  let response = await userModel.login(req.body.email, req.body.password);
-  console.log(response);
-  if (!response) {
-    return next(new AppError('Wrong Password !!!', 404));
-  }
-  req.user = response;
-  next();
-});
 
-module.exports.createUser = createUser;
-module.exports.getAllUsers = getAllUsers;
-module.exports.updateUser = updateUser;
-module.exports.getUserById = getUserById;
-module.exports.deleteUser = deleteUser;
-module.exports.login = login;
+
+module.exports = {
+    sendEmailVerificationOTP,
+    createUser,
+    login,
+    updatedUserDetails,
+    getUserById,
+    deleteUser,
+    getAllUsers
+}
